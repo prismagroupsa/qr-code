@@ -5,43 +5,61 @@ services:
     restart: "unless-stopped"
     environment:
       TYPE: "docker"
-      BASE_URL: "https://mydomain.com"
-      DATABASE_HOST: "php-dynamic-qrcode-db"
+      BASE_URL: "https://qr.prisma-group.ch"
+      DATABASE_HOST: "qrcode_db"
       DATABASE_PORT: "3306"
       DATABASE_NAME: "qrcode"
       DATABASE_USER: "qrcode"
       DATABASE_PASSWORD: "changeme"
       DATABASE_PREFIX: ""
       DATABASE_CHARSET: "utf8"
-    ports:
-      - 80:80
-    depends_on:
-      - php-dynamic-qrcode-db
     volumes:
-      - php_dynamic_qrcode_saved_qrcode_data:/var/www/html/saved_qrcode
+      - data:/var/www/html/saved_qrcode
     networks:
-      - php-dynamic-qrcode-network
+      - qrcode-network
+      - proxy
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
 
-  php-dynamic-qrcode-db:
+  db:
     image: "giandonatoinverso/php-dynamic-qr-code-db:latest"
     restart: "unless-stopped"
     volumes:
       - php_dynamic_qrcode_db_data:/var/lib/mysql
-    ports:
-      - '13306:3306'
     environment:
       MYSQL_ROOT_PASSWORD: "changeme"
       MYSQL_DATABASE: "qrcode"
       MYSQL_USER: "qrcode"
       MYSQL_PASSWORD: "changeme"
     networks:
-      - php-dynamic-qrcode-network
+      - qrcode-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == worker
+          
+networks:
+  qrcode-network:
+    driver: overlay
+  proxy:
+    external: true
 
 volumes:
-  php_dynamic_qrcode_db_data:
-  php_dynamic_qrcode_config_data:
-  php_dynamic_qrcode_saved_qrcode_data:
-
-networks:
-  php-dynamic-qrcode-network:
-    driver: bridge
+ php_dynamic_qrcode_db_data:
+  driver: local
+  driver_opts:
+      type: "nfs"
+      o: "addr=172.16.100.103,rw,bg,hard,vers=4,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+      device: ":/DOCKER/qrcode/db"
+ data:
+  driver: local
+  driver_opts:
+      type: "nfs"
+      o: "addr=172.16.100.103,rw,bg,hard,vers=4,proto=tcp,timeo=600,rsize=65536,wsize=65536,nointr"
+      device: ":/DOCKER/qrcode/data"
