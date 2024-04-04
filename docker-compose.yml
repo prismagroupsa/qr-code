@@ -6,7 +6,7 @@ services:
     environment:
       TYPE: "docker"
       BASE_URL: "https://qr.prisma-group.ch"
-      DATABASE_HOST: "qrcode_db"
+      DATABASE_HOST: "qr-code_db"
       DATABASE_PORT: "3306"
       DATABASE_NAME: "qrcode"
       DATABASE_USER: "qrcode"
